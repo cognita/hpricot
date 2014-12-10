@@ -14,7 +14,14 @@ module Hpricot
 
     s.
         gsub(/\&(\w+);/) { [NamedCharacters[$1] || 63].pack("U*") }. # 63 = ?? (query char)
-        gsub(/\&\#(\d+);/) { [$1.to_i].pack("U*") }.
+        gsub(/\&\#(\d+);/) {
+          # convert the xml entities to unicode chars but ignore the invalid UTF-8 code points
+          # http://en.wikipedia.org/wiki/UTF-8#Invalid_code_points
+          # "According to the UTF-8 definition (RFC 3629) the high and low surrogate halves used
+          #  by UTF-16 (U+D800 through U+DFFF) are not legal Unicode values,
+          #  and their UTF-8 encoding should be treated as an invalid byte sequence."
+          [$1.to_i].pack("U*") unless ($1.to_i).between?(55296, 57343)
+         }.
         gsub(/\&\#x([0-9a-fA-F]+);/) { [$1.to_i(16)].pack("U*") }
   end
 
